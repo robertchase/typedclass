@@ -51,7 +51,7 @@ class Typed(metaclass=_Model):
         self.__dict__["_v"] = {}
 
         for value, field in zip(args, self._f):
-            kwargs[field.name] = value
+            kwargs[field.name] = value  # convert args to kwargs
 
         for field in self._f:
             if field.is_required and field.default is None:
@@ -61,9 +61,12 @@ class Typed(metaclass=_Model):
                 if field.name not in kwargs:
                     kwargs[field.name] = field.default
 
-        for name, value in kwargs.items():
-            field = self._lookup_field(name)
-            self._setfield(field, value)
+        for name in kwargs.keys():
+            self._lookup_field(name)  # look for undefined fields
+
+        for field in self._f:
+            if field.name in kwargs:
+                self._setfield(field, kwargs[field.name])
 
     def __str__(self):
         return str(self._as_dict())
