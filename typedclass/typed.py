@@ -57,7 +57,7 @@ class Typed(metaclass=_Model):
             if field.is_required and field.default is None:
                 if field.name not in kwargs:
                     raise RequiredAttributeError(field.name)
-            elif field.default:
+            elif field.default is not None:
                 if field.name not in kwargs:
                     kwargs[field.name] = field.default
 
@@ -67,6 +67,7 @@ class Typed(metaclass=_Model):
         for field in self._f:
             if field.name in kwargs:
                 self._setfield(field, kwargs[field.name])
+                field.after_init(self)
 
     def __str__(self):
         return str(self._as_dict())
@@ -91,6 +92,7 @@ class Typed(metaclass=_Model):
         if field.is_readonly:
             raise ReadOnlyFieldError(name)
         self._setfield(field, value)
+        field.after_set(self)
 
     def _lookup_field(self, name):
         field = object.__getattribute__(self, name)
@@ -116,7 +118,6 @@ class Typed(metaclass=_Model):
             if message:
                 error += f": {message}"
             raise ValueError(error) from err
-        field.after_set(self)
 
     def __delattr__(self, name):
         field = self._lookup_field(name)
