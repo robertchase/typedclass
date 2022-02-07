@@ -6,6 +6,14 @@ class RequiredAttributeError(AttributeError):
     """custom exception"""
 
 
+class ExtraAttributeError(AttributeError):
+    """custom exception"""
+
+
+class DuplicateAttributeError(AttributeError):
+    """custom exception"""
+
+
 class ReadOnlyFieldError(ValueError):
     """custom exception"""
 
@@ -22,18 +30,20 @@ class _Model(type):
 
     def __new__(cls, name, supers, attrs):
 
-        # --- create the "_f" attribute to hold shared field list
-        fields = attrs["_f"] = []
+        fields = {}
 
         def update_fields(data):
             for key, value in data.items():
                 if isinstance(value, Field):
                     value.name = key
-                    fields.append(value)
+                    fields[key] = value  # will over-write/ride subclass Fields
 
-        for sup in supers[::-1]:
+        for sup in supers[::-1]:  # move up through class hierarchy
             update_fields(sup.__dict__)
         update_fields(attrs)
+
+        # --- create the "_f" attribute to hold shared field list
+        attrs["_f"] = [field for field in fields.values()]
 
         return super().__new__(cls, name, supers, attrs)
 
@@ -50,8 +60,16 @@ class Typed(metaclass=_Model):
     def __init__(self, *args, **kwargs):
         self.__dict__["_v"] = {}
 
+        if len(args) > len(self._f):
+            raise ExtraAttributeError(str(args[len(self._f):]))
+
         for value, field in zip(args, self._f):
+            if field.name in kwargs:
+                raise DuplicateAttributeError(field.name)
             kwargs[field.name] = value  # convert args to kwargs
+
+        for name in kwargs.keys():
+            self._lookup_field(name)  # look for undefined fields
 
         for field in self._f:
             if field.is_required and field.default is None:
@@ -60,9 +78,6 @@ class Typed(metaclass=_Model):
             elif field.default is not None:
                 if field.name not in kwargs:
                     kwargs[field.name] = field.default
-
-        for name in kwargs.keys():
-            self._lookup_field(name)  # look for undefined fields
 
         for field in self._f:
             if field.name in kwargs:
