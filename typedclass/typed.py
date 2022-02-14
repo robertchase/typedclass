@@ -1,4 +1,6 @@
 """Typed Class System"""
+import json
+
 from typedclass.field import Field
 
 
@@ -36,7 +38,7 @@ class _Model(type):
             for key, value in data.items():
                 if isinstance(value, Field):
                     value.name = key
-                    fields[key] = value  # will over-write/ride subclass Fields
+                    fields[key] = value  # will over-write/ride parent Fields
 
         for sup in supers[::-1]:  # move up through class hierarchy
             update_fields(sup.__dict__)
@@ -72,10 +74,11 @@ class Typed(metaclass=_Model):
             self._lookup_field(name)  # look for undefined fields
 
         for field in self._f:
-            if field.is_required and field.default is None:
-                if field.name not in kwargs:
-                    raise RequiredAttributeError(field.name)
-            elif field.default is not None:
+            if field.is_required:
+                if field.default is None:
+                    if field.name not in kwargs:
+                        raise RequiredAttributeError(field.name)
+            if field.default is not None:
                 if field.name not in kwargs:
                     kwargs[field.name] = field.default
 
@@ -87,11 +90,23 @@ class Typed(metaclass=_Model):
     def __str__(self):
         return str(self._as_dict())
 
-    def _as_dict(self):
-        return {
-            f.name: self._v[f.name] for f in self._f
-            if f.name in self._v
-        }
+    def _as_dict(self, serialize=True):
+        result = {}
+        for field in self._f:
+            if field.name in self._v:
+                value = self._v[field.name]
+                if serialize:
+                    if serializer := getattr(field.type, "serialize", None):
+                        value = serializer(value)
+                result[field.name] = value
+        return result
+
+    def dumps(self):
+        return json.dumps(self._as_dict())
+
+    @classmethod
+    def loads(cls, data):
+        return cls(**json.loads(data))
 
     def __getattribute__(self, name):
         value = object.__getattribute__(self, name)
