@@ -4,6 +4,10 @@ import json
 from typedclass.field import Field
 
 
+class ReservedAttributeError(AttributeError):
+    """custom exception"""
+
+
 class RequiredAttributeError(AttributeError):
     """custom exception"""
 
@@ -37,6 +41,8 @@ class _Model(type):
         def update_fields(data):
             for key, value in data.items():
                 if isinstance(value, Field):
+                    if key in RESERVED:
+                        raise ReservedAttributeError(key)
                     value.name = key
                     fields[key] = value  # will over-write/ride parent Fields
 
@@ -88,9 +94,9 @@ class Typed(metaclass=_Model):
                 field.after_init(self)
 
     def __str__(self):
-        return str(self._as_dict())
+        return str(self.as_dict())
 
-    def _as_dict(self, serialize=True):
+    def as_dict(self, serialize=True):
         result = {}
         for field in self._f:
             if field.name in self._v:
@@ -102,7 +108,7 @@ class Typed(metaclass=_Model):
         return result
 
     def dumps(self):
-        return json.dumps(self._as_dict())
+        return json.dumps(self.as_dict())
 
     @classmethod
     def loads(cls, data):
@@ -154,3 +160,6 @@ class Typed(metaclass=_Model):
         if field.is_required:
             raise AttributeError("cannot delete a required field")
         del self._v[name]
+
+
+RESERVED = dir(Typed)
