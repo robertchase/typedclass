@@ -9,14 +9,14 @@ class Boolean:
 
 
 class Decimal:
-    def __init__(self, places):
-        self.places = places
+    def __init__(self, precision):
+        self.precision = int(precision)
 
     def __call__(self, instance, value):
-        return round(decimal.Decimal(value), self.places)
+        return round(decimal.Decimal(value), self.precision)
 
     def serialize(self, value):
-        return f"{value:>.{self.places}f}"
+        return f"{value:>.{self.precision}f}"
 
 
 class ISODate:
@@ -40,4 +40,24 @@ class Set:
     def __call__(self, instance, value):
         if value not in self.valid:
             raise ValueError(f"must be one of {self.valid}")
+        return value
+
+
+class String:
+    def __init__(self, min=0, max=None):
+        self.min = int(min)
+        if max:
+            max = int(max)
+            if max < 1:
+                raise AttributeError("max ({max}) must be greater than 0")
+        self.max = max
+
+    def __call__(self, instance, value):
+        value = str(value)
+        if self.min:
+            if len(value) < self.min:
+                raise ValueError(f"length is less than minimum ({self.min})")
+        if self.max:
+            if len(value) > self.max:
+                raise ValueError(f"length is longer than maximum({self.max})")
         return value
