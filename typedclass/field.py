@@ -1,10 +1,9 @@
-def _String(instance, value):
-    return str(value)
+from typedclass.types import String
 
 
 class Field:
     def __init__(self,
-                 field_type=_String,
+                 field_type=String(),
                  default=None,
                  is_required=False,
                  is_readonly=False,
