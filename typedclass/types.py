@@ -5,7 +5,13 @@ import decimal
 class Boolean:
     @classmethod
     def __call__(cls, instance, value):
-        return bool(value)
+        if value in (True, 1, "1"):
+            value = True
+        elif value in (False, 0, "0"):
+            value = False
+        else:
+            raise ValueError(f"expecting bool value, got {value}")
+        return value
 
 
 class Decimal:
@@ -13,7 +19,10 @@ class Decimal:
         self.precision = int(precision)
 
     def __call__(self, instance, value):
-        return round(decimal.Decimal(value), self.precision)
+        try:
+            return round(decimal.Decimal(value), self.precision)
+        except decimal.InvalidOperation as exc:
+            raise ValueError(str(exc))
 
     def serialize(self, value):
         return f"{value:>.{self.precision}f}"
