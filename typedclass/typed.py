@@ -107,6 +107,25 @@ class Typed(metaclass=_Model):
                 result[field.name] = value
         return result
 
+    @classmethod
+    def from_dict(cls, data):
+
+        def _from_dict(data):
+            return cls(**{
+                f.name: data[f.name]
+                for f in cls._f
+                if f.name in data  # ignore keys that aren't field names
+            })
+
+        if data:
+            if isinstance(data, list):
+                result = [_from_dict(item) for item in data]
+            else:
+                result = _from_dict(data)
+        else:
+            result = None
+        return result
+
     def dumps(self):
         return json.dumps(self.as_dict())
 
