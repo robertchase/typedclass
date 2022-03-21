@@ -11,6 +11,8 @@ class Field:
                  after_set=None,
                  ):
 
+        if isinstance(field_type, type):
+            field_type = field_type()
         self.type = field_type
         self.default = default
         self.is_required = is_required
