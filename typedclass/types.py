@@ -32,7 +32,10 @@ class ISODate:
     @classmethod
     def __call__(cls, instance, value):
         if not isinstance(value, date):
-            value = datetime.strptime(value, "%Y-%m-%d").date()
+            try:
+                value = datetime.strptime(value, "%Y-%m-%d").date()
+            except TypeError as err:
+                raise ValueError(err) from err
         return value
 
     @classmethod
