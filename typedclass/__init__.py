@@ -2,6 +2,7 @@ from typedclass.typed import Typed
 from typedclass.field import Field
 from typedclass.types import Boolean
 from typedclass.types import Decimal
+from typedclass.types import Integer
 from typedclass.types import ISODate
 from typedclass.types import Set
 from typedclass.types import String

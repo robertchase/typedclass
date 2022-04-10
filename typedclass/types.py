@@ -28,6 +28,12 @@ class Decimal:
         return f"{value:>.{self.precision}f}"
 
 
+class Integer:
+    @classmethod
+    def __call__(cls, instance, value):
+        return int(value)
+
+
 class ISODate:
     @classmethod
     def __call__(cls, instance, value):
