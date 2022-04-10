@@ -5,19 +5,23 @@ from typedclass.field import Field
 
 
 class ReservedAttributeError(AttributeError):
-    """custom exception"""
+    def __init__(self, name):
+        self.args = (f"reserved attribute: {name}",)
 
 
 class RequiredAttributeError(AttributeError):
-    """custom exception"""
+    def __init__(self, name):
+        self.args = (f"missing required attribute: {name}",)
 
 
 class ExtraAttributeError(AttributeError):
-    """custom exception"""
+    def __init__(self, name):
+        self.args = (f"extra attribute(s): {', '.join(name)}",)
 
 
 class DuplicateAttributeError(AttributeError):
-    """custom exception"""
+    def __init__(self, name):
+        self.args = (f"duplicate attribute: {name}",)
 
 
 class ReadOnlyFieldError(ValueError):
@@ -25,7 +29,8 @@ class ReadOnlyFieldError(ValueError):
 
 
 class NoneValueError(ValueError):
-    """custom exception"""
+    def __init__(self, name):
+        self.args = (f"field cannot be null: {name}",)
 
 
 class _Model(type):
@@ -69,7 +74,7 @@ class Typed(metaclass=_Model):
         self.__dict__["_v"] = {}
 
         if len(args) > len(self._f):
-            raise ExtraAttributeError(str(args[len(self._f):]))
+            raise ExtraAttributeError(args[len(self._f):])
 
         for value, field in zip(args, self._f):
             if field.name in kwargs:
@@ -77,7 +82,11 @@ class Typed(metaclass=_Model):
             kwargs[field.name] = value  # convert args to kwargs
 
         for name in kwargs.keys():
-            self._lookup_field(name)  # look for undefined fields
+            try:
+                self._lookup_field(name)  # look for undefined fields
+            except AttributeError as err:
+                err.args = (f"undefined field name '{name}'",)
+                raise
 
         for field in self._f:
             if field.is_required:
@@ -92,6 +101,11 @@ class Typed(metaclass=_Model):
             if field.name in kwargs:
                 self._setfield(field, kwargs[field.name])
                 field.after_init(self)
+
+        self.__after_init__()
+
+    def __after_init__(self):
+        pass
 
     def __str__(self):
         return str(self.as_dict())
@@ -169,10 +183,8 @@ class Typed(metaclass=_Model):
             error = (
                 f"invalid <{type}> value ({value}) for field '{field.name}'"
             )
-            message = str(err)
-            if message:
-                error += f": {message}"
-            raise ValueError(error) from err
+            err.args = (error,)
+            raise
 
     def __delattr__(self, name):
         field = self._lookup_field(name)

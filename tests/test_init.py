@@ -10,10 +10,13 @@ class Case1(Typed):
     a = Field(default=DEFAULT)
 
 
-def test_default():
-    t = Case1()
-    assert t.a == Case1.DEFAULT
-    t = Case1(Case1.DEFAULT)
+@pytest.mark.parametrize("case", (
+    (Case1()),
+    (Case1(Case1.DEFAULT)),
+    (Case1(a=Case1.DEFAULT)),
+))
+def test_default(case):
+    assert case.a == Case1.DEFAULT
 
 
 def test_non_default():
@@ -23,19 +26,20 @@ def test_non_default():
     assert t.a == value  # kwarg
 
 
-def test_extra():
+@pytest.mark.parametrize("args, result", (
+    (["foo", "extra"], "extra"),
+    (["foo", "extra", "bar"], "extra, bar"),
+))
+def test_extra(args, result):
     with pytest.raises(ExtraAttributeError) as extra:
-        Case1("foo", "extra")
-        assert extra.args[0] == "'extra',"
-    with pytest.raises(ExtraAttributeError) as extra:
-        Case1("foo", "extra", "bar")
-        assert extra.args[0] == "'extra', 'bar',"
+        Case1(*args)
+    assert extra.value.args[0] == f"extra attribute(s): {result}"
 
 
 def test_duplicate():
     with pytest.raises(DuplicateAttributeError) as duplicate:
         Case1("foo", a="bar")
-        assert duplicate.args[0] == "a"
+    assert duplicate.value.args[0] == "duplicate attribute: a"
 
 
 def test_invalid():
@@ -53,16 +57,17 @@ class Case2(Typed):
 def test_required_missing():
     with pytest.raises(RequiredAttributeError) as required:
         Case2()
-        assert required.args[0] == "a"
+    assert required.value.args[0] == "missing required attribute: a"
 
 
-def test_required_none():
+@pytest.mark.parametrize("kwargs, result", (
+    ({"a": None}, "a"),
+    ({"a": "bar", "b": None}, "b"),
+))
+def test_required_none(kwargs, result):
     with pytest.raises(NoneValueError) as required:
-        Case2(a=None)
-        assert required.args[0] == "a"
-    with pytest.raises(NoneValueError) as required:
-        Case2(a="bar", b=None)
-        assert required.args[0] == "b"
+        Case2(**kwargs)
+    assert required.value.args[0] == f"field cannot be null: {result}"
 
 
 def test_required_default():
