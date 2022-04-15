@@ -2,9 +2,11 @@ from typedclass.types import String
 
 
 class Field:
+    NO_DEFAULT = type("EMPTY", (), dict())
+
     def __init__(self,
                  field_type=String(),
-                 default=None,
+                 default=NO_DEFAULT,
                  is_required=False,
                  is_readonly=False,
                  after_init=None,
