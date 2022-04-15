@@ -90,10 +90,10 @@ class Typed(metaclass=_Model):
 
         for field in self._f:
             if field.is_required:
-                if field.default is None:
+                if field.default == Field.NO_DEFAULT:
                     if field.name not in kwargs:
                         raise RequiredAttributeError(field.name)
-            if field.default is not None:
+            if field.default != Field.NO_DEFAULT:
                 if field.name not in kwargs:
                     kwargs[field.name] = field.default
 
@@ -115,7 +115,7 @@ class Typed(metaclass=_Model):
         for field in self._f:
             if field.name in self._v:
                 value = self._v[field.name]
-                if serialize:
+                if value and serialize:
                     if serializer := getattr(field.type, "serialize", None):
                         value = serializer(value)
                 result[field.name] = value
@@ -171,8 +171,12 @@ class Typed(metaclass=_Model):
 
     def _setfield(self, field, value):
         if value is None:
-            if field.is_required:
+            if field.default is None:
+                self._v[field.name] = None
+                return
+            else:
                 raise NoneValueError(field.name)
+
         try:
             self._v[field.name] = field.parse(self, value)
         except ValueError as err:
