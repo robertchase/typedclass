@@ -49,6 +49,21 @@ class ISODate:
         return value.isoformat()
 
 
+class ISODateTime:
+    @classmethod
+    def __call__(cls, instance, value):
+        if not isinstance(value, datetime):
+            try:
+                value = datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
+            except TypeError as err:
+                raise ValueError(err) from err
+        return value
+
+    @classmethod
+    def serialize(cls, value):
+        return value.isoformat()
+
+
 class Set:
     def __init__(self, *args, name=None):
         self.valid = args
