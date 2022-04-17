@@ -10,6 +10,7 @@ class Field:
                  is_required=False,
                  is_readonly=False,
                  after_init=None,
+                 before_set=None,
                  after_set=None,
                  ):
 
@@ -20,6 +21,7 @@ class Field:
         self.is_required = is_required
         self.is_readonly = is_readonly
         self._after_init = after_init
+        self._before_set = before_set
         self._after_set = after_set
         self.name = None
 
@@ -29,6 +31,11 @@ class Field:
     def after_init(self, instance):
         if self._after_init:
             self._after_init(instance)
+
+    def before_set(self, instance, value):
+        if self._before_set:
+            value = self._before_set(instance, value)
+        return value
 
     def after_set(self, instance):
         if self._after_set:

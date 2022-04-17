@@ -158,6 +158,7 @@ class Typed(metaclass=_Model):
 
     def __setattr__(self, name, value):
         field = self._lookup_field(name)
+        value = field.before_set(self, value)
         if field.is_readonly:
             raise ReadOnlyFieldError(name)
         self._setfield(field, value)
