@@ -187,6 +187,7 @@ class Typed(metaclass=_Model):
                 type = field.type.__class__.__name__
             error = (
                 f"invalid <{type}> value ({value}) for field '{field.name}'"
+                f": {str(err)}"
             )
             err.args = (error,)
             raise
