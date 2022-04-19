@@ -1,5 +1,6 @@
 from datetime import date, datetime
 import decimal
+import re
 
 
 class Boolean:
@@ -31,6 +32,8 @@ class Decimal:
 class Integer:
     @classmethod
     def __call__(cls, instance, value):
+        if not re.match(r"\d+$", str(value)):
+            raise ValueError(f"not an integer")
         return int(value)
 
 
