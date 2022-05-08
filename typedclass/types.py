@@ -1,5 +1,6 @@
 from datetime import date, datetime
 import decimal
+import json
 import re
 
 
@@ -33,7 +34,7 @@ class Integer:
     @classmethod
     def __call__(cls, instance, value):
         if not re.match(r"\d+$", str(value)):
-            raise ValueError(f"not an integer")
+            raise ValueError("not an integer")
         return int(value)
 
 
@@ -65,6 +66,22 @@ class ISODateTime:
     @classmethod
     def serialize(cls, value):
         return value.isoformat()
+
+
+class Json:
+
+    @classmethod
+    def __call__(self, instance, value):
+        if isinstance(value, str):
+            try:
+                value = json.loads(value)
+            except json.decoder.JSONDecodeError as exc:
+                raise ValueError(exc) from exc
+        return value
+
+    @classmethod
+    def serialize(cls, value):
+        return json.dumps(value)
 
 
 class Set:

@@ -1,6 +1,6 @@
 import pytest
 
-from typedclass import Typed, Field
+from typedclass import Typed, Field, Kwargs
 from typedclass import ExtraAttributeError, DuplicateAttributeError
 from typedclass import RequiredAttributeError, NoneValueError
 
@@ -75,3 +75,19 @@ def test_required_default():
     case = Case2(value)
     assert case.a == value
     assert case.b == Case2.DEFAULT
+
+
+class Case3(Typed):
+    a = Field()
+    b = Field()
+    c = Kwargs()
+
+
+def test_kwargs():
+    case = Case3(a=1, b=2, x=1, y=2, z=3)
+    assert case.c == dict(x=1, y=2, z=3)
+
+
+def test_kwargs_as_dict():
+    case = Case3(a=1, b=2, x=1, y=2, z=3)
+    assert case.as_dict() == dict(a="1", b="2", c=dict(x=1, y=2, z=3))

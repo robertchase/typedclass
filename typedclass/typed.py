@@ -4,6 +4,10 @@ import json
 from typedclass.field import Field
 
 
+class Kwargs:
+    """a 'Field' to scoop up remaining keyword arguments"""
+
+
 class ReservedAttributeError(AttributeError):
     def __init__(self, name):
         self.args = (f"reserved attribute: {name}",)
@@ -55,6 +59,17 @@ class _Model(type):
             update_fields(sup.__dict__)
         update_fields(attrs)
 
+        def update_kwarg(data):
+            for key, value in data.items():
+                if isinstance(value, Kwargs):
+                    attrs["_k"] = key  # supercede parent definitions
+
+        # look for Kwargs
+        attrs["_k"] = None
+        for sup in supers[::-1]:  # move up through class hierarchy
+            update_kwarg(sup.__dict__)
+        update_kwarg(attrs)
+
         # --- create the "_f" attribute to hold shared field list
         attrs["_f"] = [field for field in fields.values()]
 
@@ -68,10 +83,14 @@ class Typed(metaclass=_Model):
            1. The Typed's fields are kept in the "_f" attribute and the
               instance values are kept in the "_v" attribute. The "_f"
               attribute is shared with all instances.
+           2. Type Typed's "_k" attribute holds the name (or None) of a
+              catch-all dict for any unspecified fields.
     """
 
     def __init__(self, *args, **kwargs):
         self.__dict__["_v"] = {}
+        if self._k:
+            self._v[self._k] = {}
 
         if len(args) > len(self._f):
             raise ExtraAttributeError(args[len(self._f):])
@@ -85,8 +104,11 @@ class Typed(metaclass=_Model):
             try:
                 self._lookup_field(name)  # look for undefined fields
             except AttributeError as err:
-                err.args = (f"undefined field name '{name}'",)
-                raise
+                if self._k:
+                    self._v[self._k][name] = kwargs[name]
+                else:
+                    err.args = (f"undefined field name '{name}'",)
+                    raise
 
         for field in self._f:
             if field.is_required:
@@ -112,6 +134,8 @@ class Typed(metaclass=_Model):
 
     def as_dict(self, serialize=True):
         result = {}
+        if self._k:
+            result[self._k] = self._v[self._k]
         for field in self._f:
             if field.name in self._v:
                 value = self._v[field.name]
@@ -153,6 +177,8 @@ class Typed(metaclass=_Model):
             if name not in self._v:
                 raise AttributeError(name)
             value = self._v[name]
+        if isinstance(value, Kwargs):
+            value = self._v[self._k]
 
         return value
 
