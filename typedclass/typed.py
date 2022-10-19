@@ -1,5 +1,5 @@
 """Typed Class System"""
-import json
+# import json
 
 from typedclass.field import Field
 
@@ -47,28 +47,28 @@ class _Model(type):
 
         fields = {}
 
-        def update_fields(data):
-            for key, value in data.items():
-                if isinstance(value, Field):
-                    if key in RESERVED:
-                        raise ReservedAttributeError(key)
-                    value.name = key
-                    fields[key] = value  # will over-write/ride parent Fields
-
-        for sup in supers[::-1]:  # move up through class hierarchy
-            update_fields(sup.__dict__)
-        update_fields(attrs)
-
-        def update_kwarg(data):
-            for key, value in data.items():
-                if isinstance(value, Kwargs):
-                    attrs["_k"] = key  # supercede parent definitions
+        # grab super-class Fields
+        for sup in supers[::-1]:
+            if issubclass(sup, Typed):
+                # look in "_f" so we get the super's supers too
+                for fld in sup.__dict__["_f"]:
+                    fields[fld.name] = fld
+        # add/overlay Fields from this class
+        for key, value in attrs.items():
+            if isinstance(value, Field):
+                if key in RESERVED:
+                    raise ReservedAttributeError(key)
+                value.name = key
+                fields[key] = value
 
         # look for Kwargs
         attrs["_k"] = None
-        for sup in supers[::-1]:  # move up through class hierarchy
-            update_kwarg(sup.__dict__)
-        update_kwarg(attrs)
+        for sup in supers[::-1]:
+            if issubclass(sup, Typed):
+                attrs["_k"] = sup.__dict__["_k"]
+        for key, value in attrs.items():
+            if isinstance(value, Kwargs):
+                attrs["_k"] = key
 
         # --- create the "_f" attribute to hold shared field list
         attrs["_f"] = [field for field in fields.values()]
@@ -163,13 +163,6 @@ class Typed(metaclass=_Model):
         else:
             result = None
         return result
-
-    def dumps(self):
-        return json.dumps(self.as_dict())
-
-    @classmethod
-    def loads(cls, data):
-        return cls(**json.loads(data))
 
     def __getattribute__(self, name):
         value = object.__getattribute__(self, name)

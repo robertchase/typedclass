@@ -91,3 +91,47 @@ def test_kwargs():
 def test_kwargs_as_dict():
     case = Case3(a=1, b=2, x=1, y=2, z=3)
     assert case.as_dict() == dict(a="1", b="2", c=dict(x=1, y=2, z=3))
+
+
+class Case4(Typed):
+    a = Field(default="A")
+
+
+class Case5(Case4):
+    b = Field()
+
+
+def test_inherited_field():
+    case = Case5(a=1, b=2)
+    assert case.as_dict() == dict(a="1", b="2")
+
+
+class Case6(Case4):
+    a = Field(default="AA")
+
+
+def test_overridden_field():
+    case = Case6()
+    assert case.a == "AA"
+
+
+class Case7(Case5):
+    c = Field()
+
+
+def test_three_deep():
+    case = Case7(a=1, b=2, c=3)
+    assert case.as_dict() == dict(a="1", b="2", c="3")
+
+
+class Case8(Typed):
+    d = Field()
+
+
+class Case9(Case7, Case8):
+    e = Field()
+
+
+def test_deep_and_wide():
+    case = Case9(a=1, b=2, c=3, d=4, e=5)
+    assert case.as_dict() == dict(a="1", b="2", c="3", d="4", e="5")
