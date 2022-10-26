@@ -16,3 +16,5 @@ from typedclass.types import Integer
 from typedclass.types import Json
 from typedclass.types import Set
 from typedclass.types import String
+
+from typedclass.decorator import typedfunction
