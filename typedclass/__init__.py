@@ -3,6 +3,7 @@ from typedclass.field import Field
 from typedclass.typed import DuplicateAttributeError
 from typedclass.typed import ExtraAttributeError
 from typedclass.typed import Kwargs
+from typedclass.typed import List
 from typedclass.typed import NoneValueError
 from typedclass.typed import ReadOnlyFieldError
 from typedclass.typed import RequiredAttributeError

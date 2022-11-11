@@ -14,9 +14,8 @@ class Field:
                  after_set=None,
                  ):
 
-        if isinstance(field_type, type):
-            field_type = field_type()
         self.type = field_type
+        self.is_nested = False
         self.default = default
         self.is_required = is_required
         self.is_readonly = is_readonly
@@ -29,14 +28,14 @@ class Field:
         return self.type(instance, value)
 
     def after_init(self, instance):
-        if self._after_init:
+        if self._after_init and instance:
             self._after_init(instance)
 
     def before_set(self, instance, value):
-        if self._before_set:
+        if self._before_set and instance:
             value = self._before_set(instance, value)
         return value
 
     def after_set(self, instance):
-        if self._after_set:
+        if self._after_set and instance:
             self._after_set(instance)

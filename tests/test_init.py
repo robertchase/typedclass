@@ -135,3 +135,16 @@ class Case9(Case7, Case8):
 def test_deep_and_wide():
     case = Case9(a=1, b=2, c=3, d=4, e=5)
     assert case.as_dict() == dict(a="1", b="2", c="3", d="4", e="5")
+
+
+class Case10:
+    f = Field()
+
+
+class Case11(Typed, Case10):
+    g = Field()
+
+
+def test_non_typed_class_with_fields():
+    case = Case11(f=1, g=2)
+    assert case.as_dict() == dict(f="1", g="2")

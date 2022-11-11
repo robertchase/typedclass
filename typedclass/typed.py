@@ -1,6 +1,4 @@
 """Typed Class System"""
-# import json
-
 from typedclass.field import Field
 
 
@@ -37,6 +35,26 @@ class NoneValueError(ValueError):
         self.args = (f"field cannot be null: {name}",)
 
 
+class InvalidNestedTyped(ValueError):
+    def __init__(self, typed_class):
+        self.args = (f"expecting {typed_class}",)
+
+
+class ListTooShortError(ValueError):
+    def __init__(self, min):
+        self.args = (f"length must be at least {min}",)
+
+
+class ListTooLongError(ValueError):
+    def __init__(self, max):
+        self.args = (f"length must be no more than {max}",)
+
+
+class ListDuplicateItemError(ValueError):
+    def __init__(self, value):
+        self.args = (f"{value} already in list",)
+
+
 class _Model(type):
     """metaclass for typed class
 
@@ -47,19 +65,29 @@ class _Model(type):
 
         fields = {}
 
+        def add_fields(source):
+            for key, value in source.items():
+                if isinstance(value, Field):
+                    if key in RESERVED:
+                        raise ReservedAttributeError(key)
+                    if isinstance(value.type, type):
+                        if issubclass(value.type, Typed):
+                            value.is_nested = True
+                        else:
+                            value.type = value.type()
+                    value.name = key
+                    fields[key] = value
+
         # grab super-class Fields
         for sup in supers[::-1]:
             if issubclass(sup, Typed):
                 # look in "_f" so we get the super's supers too
                 for fld in sup.__dict__["_f"]:
                     fields[fld.name] = fld
+            else:
+                add_fields(sup.__dict__)
         # add/overlay Fields from this class
-        for key, value in attrs.items():
-            if isinstance(value, Field):
-                if key in RESERVED:
-                    raise ReservedAttributeError(key)
-                value.name = key
-                fields[key] = value
+        add_fields(attrs)
 
         # look for Kwargs
         attrs["_k"] = None
@@ -140,7 +168,9 @@ class Typed(metaclass=_Model):
             if field.name in self._v:
                 value = self._v[field.name]
                 if value and serialize:
-                    if serializer := getattr(field.type, "serialize", None):
+                    if field.is_nested:
+                        value = value.as_dict()
+                    elif serializer := getattr(field.type, "serialize", None):
                         value = serializer(value)
                 result[field.name] = value
         return result
@@ -198,7 +228,14 @@ class Typed(metaclass=_Model):
                 raise NoneValueError(field.name)
 
         try:
-            self._v[field.name] = field.parse(self, value)
+            if field.is_nested:
+                if isinstance(value, dict):
+                    value = field.type(**value)
+                elif not isinstance(value, field.type):
+                    raise InvalidNestedTyped(field.type)
+            else:
+                value = field.parse(self, value)
+            self._v[field.name] = value
         except ValueError as err:
             if hasattr(field.type, "__name__"):
                 type = field.type.__name__
@@ -216,6 +253,105 @@ class Typed(metaclass=_Model):
         if field.is_required:
             raise AttributeError("cannot delete a required field")
         del self._v[name]
+
+
+class List:
+    """support a list as a Field type"""
+    def __init__(self, element_type, min=0, max=0, allow_dups=True):
+        self.type = element_type
+        self.min = min
+        self.max = max
+        self.allow_dups = allow_dups
+
+    def __call__(self, instance, value):
+        return _List(self, value)
+
+    def serialize(self, value):
+        return value.serialize()
+
+
+class _List:
+    def __init__(self, parent, value):
+        self.type = parent.type
+        self.is_nested = False
+        self.min = parent.min
+        self.max = parent.max
+        self.allow_dups = parent.allow_dups
+
+        if isinstance(self.type, type):
+            if issubclass(self.type, Typed):
+                self.is_nested = True
+            else:
+                self.type = self.type()
+
+        if not isinstance(value, list):
+            raise Exception("expecting a list")
+        if self.min > 0:
+            if len(value) < self.min:
+                raise ListTooShortError(self.min)
+        if self.max > 0:
+            if len(value) > self.max:
+                raise ListTooLongError(self.max)
+
+        self.store = []
+        for item in value:
+            self.append(item)
+        # self.store = [self._parse(item) for item in value]
+
+    def _parse(self, item):
+        if self.is_nested:
+            if isinstance(item, dict):
+                item = self.type(**item)
+            elif not isinstance(item, self.type):
+                raise InvalidNestedTyped(self.type)
+        else:
+            item = self.type(None, item)
+        return item
+
+    def serialize(self):
+        if self.is_nested:
+            value = [item.as_dict() for item in self.store]
+        elif serializer := getattr(self.type, "serialize", None):
+            value = [serializer(item) for item in self.store]
+        else:
+            value = self.store.copy()
+        return value
+
+    def __len__(self):
+        return len(self.store)
+
+    def __eq__(self, other):
+        return self.store == other
+
+    def __getitem__(self, key):
+        return self.store[key]
+
+    def __setitem__(self, key, value):
+        value = self._parse(value)
+        if not self.allow_dups:
+            temp = self.store.copy()
+            del temp[key]
+            if value in temp:
+                raise ListDuplicateItemError(value)
+        self.store[key] = value
+
+    def __delitem__(self, key):
+        if self.min > 0:
+            # preflight check (key is an arbitrary slice)
+            temp = [0] * len(self.store)
+            del temp[key]
+            if len(temp) < self.min:
+                raise ListTooShortError(self.min)
+        del self.store[key]
+
+    def append(self, value):
+        if self.max > 0:
+            if len(self.store) == self.max:
+                raise ListTooLongError(self.max)
+        value = self._parse(value)
+        if not self.allow_dups and value in self.store:
+            raise ListDuplicateItemError(value)
+        self.store.append(value)
 
 
 RESERVED = dir(Typed)
