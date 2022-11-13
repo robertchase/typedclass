@@ -1,8 +1,8 @@
 import pytest
 
 from typedclass import Typed, Field, List, String, Integer
-from typedclass.typed import ListTooLongError, ListTooShortError
-from typedclass.typed import ListDuplicateItemError
+from typedclass.list import ListTooLongError, ListTooShortError
+from typedclass.list import ListDuplicateItemError
 
 
 class Case1(Typed):
@@ -21,6 +21,11 @@ def test_set():
     assert not hasattr(c, "a")
     c.a = [1, 2]
     assert c.a == ["1", "2"]
+
+
+def test_index():
+    c = Case1(a=[1, 2, 3])
+    assert c.a.index("2") == 1
 
 
 def test_slice():
@@ -167,7 +172,8 @@ def test_typed_set(init, append, is_valid):
 @pytest.mark.parametrize("init, key, value, is_valid", (
     ([1, 2, 3], 1, 4, True),
     ([1, 2, 3], 1, 2, True),
-    ([1, 2, 3], 1, 3, False),
+    ([1, 2, 3], 0, 1, True),
+    ([1, 2, 3], 0, 2, False),
 ))
 def test_typed_set_setattr(init, key, value, is_valid):
     c = Case5(init)
