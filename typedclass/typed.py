@@ -96,7 +96,7 @@ class Typed(metaclass=_Model):
            1. The Typed's fields are kept in the "_f" attribute and the
               instance values are kept in the "_v" attribute. The "_f"
               attribute is shared with all instances.
-           2. Type Typed's "_k" attribute holds the name (or None) of a
+           2. The Typed's "_k" attribute holds the name (or None) of a
               catch-all dict for any unspecified fields.
     """
 
@@ -219,7 +219,7 @@ class Typed(metaclass=_Model):
                 elif not isinstance(value, field.type):
                     raise InvalidNestedTyped(field.type)
             else:
-                value = field.parse(self, value)
+                value = field.type(value)
             self._v[field.name] = value
         except ValueError as err:
             if hasattr(field.type, "__name__"):

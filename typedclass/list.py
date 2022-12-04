@@ -23,11 +23,18 @@ class List:
     """support a list as a Field type"""
     def __init__(self, element_type, min=0, max=0, allow_dups=True):
         self.type = element_type
+        self.is_nested = False
         self.min = min
         self.max = max
         self.allow_dups = allow_dups
 
-    def __call__(self, instance, value):
+        if isinstance(self.type, type):
+            if issubclass(self.type, Typed):
+                self.is_nested = True
+            else:
+                self.type = self.type()
+
+    def __call__(self, value):
         return _List(self, value)
 
     def serialize(self, value):
@@ -38,16 +45,10 @@ class _List:
     """List instance"""
     def __init__(self, parent, value):
         self.type = parent.type
-        self.is_nested = False
+        self.is_nested = parent.is_nested
         self.min = parent.min
         self.max = parent.max
         self.allow_dups = parent.allow_dups
-
-        if isinstance(self.type, type):
-            if issubclass(self.type, Typed):
-                self.is_nested = True
-            else:
-                self.type = self.type()
 
         if isinstance(value, str):
             value = json.loads(value)
@@ -71,7 +72,7 @@ class _List:
             elif not isinstance(item, self.type):
                 raise InvalidNestedTyped(self.type)
         else:
-            item = self.type(None, item)
+            item = self.type(item)
         return item
 
     def serialize(self):

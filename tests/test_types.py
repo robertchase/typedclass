@@ -14,12 +14,12 @@ from typedclass import Boolean, Decimal, ISODate, Set, String
     ("0", False),
 ))
 def test_boolean(value, result):
-    assert result == Boolean()(None, value)
+    assert result == Boolean()(value)
 
 
 def test_bad_boolean():
     with pytest.raises(ValueError):
-        Boolean()(None, "eek")
+        Boolean()("eek")
 
 
 @pytest.mark.parametrize("precision, value, result", (
@@ -30,18 +30,18 @@ def test_bad_boolean():
     (4, "12.34", decimal.Decimal("12.3400")),
 ))
 def test_decimal(precision, value, result):
-    assert result == Decimal(precision)(None, value)
+    assert result == Decimal(precision)(value)
 
 
 def test_bad_precision():
     with pytest.raises(ValueError):
-        Decimal("bad")(None, 1)
+        Decimal("bad")(1)
 
 
 def test_bad_decimal():
     type = Decimal(2)
     with pytest.raises(ValueError):
-        type(None, "bad")
+        type("bad")
 
 
 @pytest.mark.parametrize("value, result", (
@@ -49,7 +49,7 @@ def test_bad_decimal():
     (date(2020, 2, 3), date(2020, 2, 3)),
 ))
 def test_isodate(value, result):
-    assert result == ISODate()(None, value)
+    assert result == ISODate()(value)
 
 
 @pytest.mark.parametrize("value", (
@@ -59,7 +59,7 @@ def test_isodate(value, result):
 ))
 def test_bad_isodate(value):
     with pytest.raises(ValueError):
-        ISODate()(None, value)
+        ISODate()(value)
 
 
 @pytest.mark.parametrize("valid, value, result", (
@@ -69,7 +69,7 @@ def test_bad_isodate(value):
     ([0, None], None, None),
 ))
 def test_set(valid, value, result):
-    assert result == Set(*valid)(None, value)
+    assert result == Set(*valid)(value)
 
 
 @pytest.mark.parametrize("valid, value", (
@@ -80,7 +80,7 @@ def test_set(valid, value, result):
 ))
 def test_bad_set(valid, value):
     with pytest.raises(ValueError):
-        ISODate()(None, value)
+        ISODate()(value)
 
 
 @pytest.mark.parametrize("min, max, value, result", (
@@ -88,7 +88,7 @@ def test_bad_set(valid, value):
     (1, 10, "test", "test"),
 ))
 def test_string(min, max, value, result):
-    assert result == String(min, max)(None, value)
+    assert result == String(min, max)(value)
 
 
 def test_bad_max_string():
@@ -102,4 +102,4 @@ def test_bad_max_string():
 ))
 def test_bad_string(min, max, value):
     with pytest.raises(ValueError):
-        String(min, max)(None, value)
+        String(min, max)(value)

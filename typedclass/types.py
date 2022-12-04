@@ -6,7 +6,7 @@ import re
 
 class Boolean:
     @classmethod
-    def __call__(cls, instance, value):
+    def __call__(cls, value):
         if value in (True, 1, "1"):
             value = True
         elif value in (False, 0, "0"):
@@ -20,7 +20,7 @@ class Decimal:
     def __init__(self, precision):
         self.precision = int(precision)
 
-    def __call__(self, instance, value):
+    def __call__(self, value):
         try:
             return round(decimal.Decimal(value), self.precision)
         except decimal.InvalidOperation as exc:
@@ -32,7 +32,7 @@ class Decimal:
 
 class Integer:
     @classmethod
-    def __call__(cls, instance, value):
+    def __call__(cls, value):
         if not re.match(r"\d+$", str(value)):
             raise ValueError("not an integer")
         return int(value)
@@ -40,7 +40,7 @@ class Integer:
 
 class ISODate:
     @classmethod
-    def __call__(cls, instance, value):
+    def __call__(cls, value):
         if not isinstance(value, date):
             try:
                 value = datetime.strptime(value, "%Y-%m-%d").date()
@@ -55,7 +55,7 @@ class ISODate:
 
 class ISODateTime:
     @classmethod
-    def __call__(cls, instance, value):
+    def __call__(cls, value):
         if not isinstance(value, datetime):
             try:
                 value = datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
@@ -71,7 +71,7 @@ class ISODateTime:
 class Json:
 
     @classmethod
-    def __call__(self, instance, value):
+    def __call__(self, value):
         if isinstance(value, str):
             try:
                 value = json.loads(value)
@@ -90,7 +90,7 @@ class Set:
         if name:
             self.__name__ = name
 
-    def __call__(self, instance, value):
+    def __call__(self, value):
         if value not in self.valid:
             raise ValueError(f"must be one of {self.valid}")
         return value
@@ -105,7 +105,7 @@ class String:
                 raise AttributeError("max ({max}) must be greater than 0")
         self.max = max
 
-    def __call__(self, instance, value):
+    def __call__(self, value):
         value = str(value)
         if self.min:
             if len(value) < self.min:
