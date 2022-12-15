@@ -20,3 +20,4 @@ from typedclass.types import Set
 from typedclass.types import String
 
 from typedclass.decorator import typedfunction
+from typedclass.decorator import DynamicTyped
