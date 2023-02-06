@@ -15,6 +15,9 @@ class Boolean:
             raise ValueError(f"expecting bool value, got {value}")
         return value
 
+    def serialize(self, value):
+        return 1 if value else 0
+
 
 class Decimal:
     def __init__(self, precision):

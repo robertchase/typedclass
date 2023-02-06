@@ -22,6 +22,16 @@ def test_bad_boolean():
         Boolean()("eek")
 
 
+@pytest.mark.parametrize("value, result", (
+    (0, 0),
+    (1, 1),
+    (False, 0),
+    (True, 1),
+))
+def test_serialize_boolean(value, result):
+    assert Boolean().serialize(value) == result
+
+
 @pytest.mark.parametrize("precision, value, result", (
     (2, 12.34, decimal.Decimal("12.34")),
     (2, "12.34", decimal.Decimal("12.34")),
