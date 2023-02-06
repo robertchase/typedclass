@@ -82,6 +82,7 @@ class _List:
             value = [serializer(item) for item in self.store]
         else:
             value = self.store.copy()
+        value = json.dumps(value)
         return value
 
     def __len__(self):
