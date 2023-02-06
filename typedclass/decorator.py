@@ -13,6 +13,11 @@ def DynamicTyped(**field_kwargs):
     for key, val in field_kwargs.items():
         if isinstance(val, Field):
             val.name = key
+            if isinstance(val.type, type):
+                if issubclass(val.type, Typed):
+                    val.is_nested = True
+                else:
+                    val.type = val.type()
         elif isinstance(val, Kwargs) and getattr(_Typed, "_k"):
             raise Exception("duplicate Kwargs specified")
         elif isinstance(val, Kwargs):
