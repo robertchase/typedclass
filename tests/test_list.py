@@ -13,7 +13,7 @@ def test_basic_init():
     c = Case1(a=[1, "two", "three"])
     assert c
     assert len(c.a) == 3
-    assert c.as_dict() == {"a": ["1", "two", "three"]}
+    assert c.as_dict() == {"a": '["1", "two", "three"]'}
 
 
 def test_set():
@@ -120,9 +120,9 @@ class Case4(Typed):
 
 
 @pytest.mark.parametrize("items, result", (
-    ([MyType(id=100, name="foo")], {"a": [{"id": 100, "name": "foo"}]}),
-    ([{"id": 100}], {"a": [{"id": 100}]}),
-    ([{"id": 100}, MyType(id=200)], {"a": [{"id": 100}, {"id": 200}]}),
+    ([MyType(id=100, name="foo")], {"a": '[{"id": 100, "name": "foo"}]'}),
+    ([{"id": 100}], {"a": '[{"id": 100}]'}),
+    ([{"id": 100}, MyType(id=200)], {"a": '[{"id": 100}, {"id": 200}]'}),
 ))
 def test_typed(items, result):
     c = Case4(a=items)
@@ -132,18 +132,19 @@ def test_typed(items, result):
 def test_typed_append():
     c = Case4(a=[{"id": 100}])
     c.a.append({"id": 200, "name": "bar"})
-    assert c.as_dict() == {"a": [{"id": 100}, {"id": 200, "name": "bar"}]}
+    assert c.as_dict() == {"a": '[{"id": 100}, {"id": 200, "name": "bar"}]'}
     del c.a[1]
     c.a.append(MyType(id=300))
-    assert c.as_dict() == {"a": [{"id": 100}, {"id": 300}]}
+    assert c.as_dict() == {"a": '[{"id": 100}, {"id": 300}]'}
 
 
 def test_typed_setattr():
     c = Case4(a=[{"id": 100}, {"id": 200}])
     c.a[1] = {"id": 300, "name": "whatever"}
-    assert c.as_dict() == {"a": [{"id": 100}, {"id": 300, "name": "whatever"}]}
+    assert c.as_dict() == {
+        "a": '[{"id": 100}, {"id": 300, "name": "whatever"}]'}
     c.a[1] = MyType(id=400)
-    assert c.as_dict() == {"a": [{"id": 100}, {"id": 400}]}
+    assert c.as_dict() == {"a": '[{"id": 100}, {"id": 400}]'}
 
 
 class Case5(Typed):
